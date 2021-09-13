@@ -1,6 +1,7 @@
 package DP_P2;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
@@ -67,7 +68,9 @@ public class Main {
 
         // Vind reiziger(s) van bepaalde datum
         String testdatum = "2002-12-03";
-        reizigers = rdao.findByGbDatum(testdatum);;
+        Date testdatumDate = Date.valueOf(testdatum);
+
+        reizigers = rdao.findByGbDatum(testdatumDate);;
         System.out.println("[Test] ReizigerDAO.findByGbDatum() geeft de volgende reizigers bij datum " + testdatum + ":");
         for (Reiziger r : reizigers) {
             System.out.println(r);

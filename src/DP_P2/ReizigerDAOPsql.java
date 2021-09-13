@@ -24,8 +24,16 @@ public class ReizigerDAOPsql implements ReizigerDAO {
             prepStatement.setString(4, reiziger.getAchternaam());
             prepStatement.setDate(5, reiziger.getGeboortedatum());
 
-            return prepStatement.execute();
+            prepStatement.closeOnCompletion();
 
+            boolean result = prepStatement.execute();
+            prepStatement.close();
+
+            return result;
+
+        } catch (SQLException ex){
+            System.out.println("SQLException - could not save reiziger");
+            return false;
         } catch(Exception ex) {
             System.out.println("Error - could not save reiziger\n" +reiziger.toString());
             ex.printStackTrace();
@@ -48,8 +56,14 @@ public class ReizigerDAOPsql implements ReizigerDAO {
             prepStatement.setDate(4, reiziger.getGeboortedatum());
             prepStatement.setInt(5, reiziger.getId());
 
-            return prepStatement.execute();
+            boolean result = prepStatement.execute();
+            prepStatement.close();
 
+            return result;
+
+        } catch (SQLException ex){
+            System.out.println("SQLException - could not update reiziger\n" +reiziger.toString());
+            return false;
         } catch(Exception ex) {
             System.out.println("Error - could not update reiziger\n" +reiziger.toString());
             return false;
@@ -66,8 +80,14 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             prepStatement.setInt(1, reiziger.getId());
 
-            return prepStatement.execute();
+            boolean result = prepStatement.execute();
+            prepStatement.close();
 
+            return result;
+
+        } catch (SQLException ex) {
+            System.out.println("SQLException - could not find delete reiziger\n" + reiziger.toString());
+            return false;
         } catch(Exception ex) {
             System.out.println("Error - could not delete reiziger\n" +reiziger.toString());
             return false;
@@ -85,6 +105,7 @@ public class ReizigerDAOPsql implements ReizigerDAO {
             prepStatement.setInt(1, id);
             ResultSet rs = prepStatement.executeQuery();
 
+
             Reiziger reiziger = null;
 
             while (rs.next() ) {
@@ -92,7 +113,13 @@ public class ReizigerDAOPsql implements ReizigerDAO {
                                         rs.getString("achternaam"), rs.getDate("geboortedatum"));
             }
 
+            prepStatement.close();
+            rs.close();
+
             return reiziger;
+        } catch (SQLException ex){
+            System.out.println("SQLException - could not find all reiziger by id " + id);
+            return null;
         } catch(Exception ex) {
             System.out.println("Error - could not find reiziger by id: " + id);
             return null;
@@ -100,14 +127,14 @@ public class ReizigerDAOPsql implements ReizigerDAO {
     }
 
     @Override
-    public List<Reiziger> findByGbDatum(String Datum) {
+    public List<Reiziger> findByGbDatum(Date Datum) {
         try{
             PreparedStatement prepStatement = conn. prepareStatement("""
                                                                         SELECT reiziger_id, voorletters, tussenvoegsel, achternaam, geboortedatum
                                                                         FROM public.reiziger
                                                                         WHERE geboortedatum = ?;
                                                                         """);
-            prepStatement.setDate(1, Date.valueOf(Datum));
+            prepStatement.setDate(1, Datum);
             ResultSet rs = prepStatement.executeQuery();
 
             Reiziger reiziger = null;
@@ -119,7 +146,13 @@ public class ReizigerDAOPsql implements ReizigerDAO {
                 reizigerList.add(reiziger);
             }
 
+            prepStatement.close();
+            rs.close();
+
             return reizigerList;
+        } catch (SQLException ex){
+            System.out.println("SQLException - could not find all reizigers " + Datum);
+            return null;
         } catch(Exception ex) {
             System.out.println("Error - could not find reiziger by date: " + Datum);
             return null;
@@ -128,24 +161,33 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
     @Override
     public List<Reiziger> findAll() {
-        try{
+        try {
             PreparedStatement prepStatement = conn.prepareStatement("""
-                                                                        SELECT *
-                                                                        FROM public.reiziger;
-                                                                        """);
+                    SELECT *
+                    FROM public.reiziger;
+                    """);
 
             ResultSet rs = prepStatement.executeQuery();
+
+
 
             Reiziger reiziger = null;
             List<Reiziger> reizigerList = new ArrayList<Reiziger>();
 
-            while (rs.next() ) {
+            while (rs.next()) {
                 reiziger = new Reiziger(rs.getInt("reiziger_id"), rs.getString("voorletters"), rs.getString("tussenvoegsel"),
                         rs.getString("achternaam"), rs.getDate("geboortedatum"));
                 reizigerList.add(reiziger);
             }
 
+            prepStatement.close();
+            rs.close();
+
             return reizigerList;
+
+        } catch (SQLException ex){
+            System.out.println("SQLException - could not find all reizigers");
+            return null;
         } catch(Exception ex) {
             System.out.println("Error - could not find all reizigers");
             return null;

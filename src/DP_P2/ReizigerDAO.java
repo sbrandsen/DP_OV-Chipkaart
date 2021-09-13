@@ -1,5 +1,6 @@
 package DP_P2;
 
+import java.sql.Date;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -10,7 +11,7 @@ public interface ReizigerDAO {
 
     Reiziger findById(int id) throws SQLException;
 
-    List<Reiziger> findByGbDatum(String Datum);
+    List<Reiziger> findByGbDatum(Date Datum);
     List<Reiziger> findAll();
 
 }
