@@ -3,6 +3,7 @@ package DP_P3;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
@@ -14,9 +15,9 @@ public class Main {
 
     ReizigerDAO rdao = new ReizigerDAOPsql(connection);
     AdresDAO adao = new AdresDAOPsql(connection);
+    OVChipkaartDAO odao = new OVChipkaartDAOpsql(connection);
 
-    //testReizigerDAO(rdao);
-    testAdresDAO(rdao, adao);
+    testOVChipkaartDAO(rdao, odao);
 
     closeConnection();
     }
@@ -40,6 +41,42 @@ public class Main {
         } catch (Exception ex){
             System.out.println("Could not close connection");
         }
+    }
+
+    private static void testOVChipkaartDAO(ReizigerDAO rdao, OVChipkaartDAO odao) throws SQLException {
+        System.out.println("\n---------- Test OVChipkaartDAO -------------");
+        System.out.println("Alle ov chipkaarten: ");
+        List<OVChipkaart> kaarten = odao.findAll();
+        for(OVChipkaart ov : kaarten){
+            System.out.println(ov.toString());
+        }
+
+        System.out.println("\n\n");
+
+        Reiziger reiziger = rdao.findById(1);
+        System.out.println(reiziger);
+
+        OVChipkaart ov = new OVChipkaart(10500, java.sql.Date.valueOf("2024-01-01"),  1, 100, reiziger);
+        reiziger.addChipkaart(ov);
+
+        System.out.println("\nSaving chipkaart....");
+        rdao.update(reiziger);
+        System.out.println("Saved chipkaart");
+
+        reiziger = rdao.findById(1);
+        System.out.println(reiziger.toString());
+
+        System.out.println("Nog een kaart toevoegen aan reiziger\n");
+        reiziger.addChipkaart(new OVChipkaart(10501, java.sql.Date.valueOf("2024-01-01"),  1, 150, reiziger));
+        rdao.update(reiziger);
+        reiziger = rdao.findById(1);
+        System.out.println(reiziger);
+
+        System.out.println("\n\nVerwijder alle kaarten bij deze reiziger\n");
+        reiziger.clearOvchipkaarten();
+        rdao.update(reiziger);
+        System.out.println(reiziger);
+
     }
 
     private static void testAdresDAO(ReizigerDAO rdao, AdresDAO adao) throws SQLException {
@@ -71,15 +108,15 @@ public class Main {
         // Maak een nieuwe reiziger + adres aan en persisteer deze in de database
         String gbdatum = "1981-03-14";
         adres = new Adres(6, "1852", "5", "Kruislaan", "Castricum", 77);
-        Reiziger sietske = new Reiziger(77, "S", "", "Boers", java.sql.Date.valueOf(gbdatum), adres);
+        //Reiziger sietske = new Reiziger(77, "S", "", "Boers", java.sql.Date.valueOf(gbdatum), adres);
         System.out.print("[Test] Eerst " + adressen.size() + " adressen, na ReizigerDAO.save() ");
-        rdao.save(sietske);
+        //rdao.save(sietske);
         adressen = adao.findAll();
         System.out.println(adressen.size() + " reizigers\n");
 
         //Delete nieuwe reiziger
         System.out.println("[Test] Delete nieuwe adres");
-        rdao.delete(sietske);
+        //.delete(sietske);
         reizigers = rdao.findAll();
         System.out.println(reizigers.size() + " adressen\n");
 
@@ -103,15 +140,15 @@ public class Main {
         // Maak een nieuwe reiziger aan en persisteer deze in de database
         String gbdatum = "1981-03-14";
         Adres adres = new Adres(6, "1852", "5", "Kruislaan", "Castricum", 77);
-        Reiziger sietske = new Reiziger(77, "S", "", "Boers", java.sql.Date.valueOf(gbdatum), adres);
+        //Reiziger sietske = new Reiziger(77, "S", "", "Boers", java.sql.Date.valueOf(gbdatum), adres);
         System.out.print("[Test] Eerst " + reizigers.size() + " reizigers, na ReizigerDAO.save() ");
-        rdao.save(sietske);
+        //rdao.save(sietske);
         reizigers = rdao.findAll();
         System.out.println(reizigers.size() + " reizigers\n");
 
         //Delete nieuwe reiziger
         System.out.println("[Test] Delete nieuwe reiziger");
-        rdao.delete(sietske);
+        //rdao.delete(sietske);
         reizigers = rdao.findAll();
         System.out.println(reizigers.size() + " reizigers\n");
 

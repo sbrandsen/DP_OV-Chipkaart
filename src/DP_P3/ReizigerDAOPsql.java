@@ -7,10 +7,12 @@ import java.util.List;
 public class ReizigerDAOPsql implements ReizigerDAO {
     Connection conn;
     AdresDAO adao;
+    OVChipkaartDAO odao;
 
     ReizigerDAOPsql(Connection connection){
         conn = connection;
         adao = new AdresDAOPsql(connection, true);
+        odao = new OVChipkaartDAOpsql(connection);
     }
 
     ReizigerDAOPsql(Connection connection, boolean skipConnection){
@@ -36,9 +38,22 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             prepStatement.execute();
             adao.save(reiziger.getAdres());
+            for(OVChipkaart ov : reiziger.getOvchipkaarten()){
+                if(odao.findByReiziger(reiziger).contains(ov)){
+                    odao.update(ov);
+                } else {
+                    odao.save(ov);
+                }
+            }
 
-            return true;
+            boolean complete = prepStatement.execute();
+            prepStatement.close();
 
+            return complete;
+
+        } catch (SQLException ex){
+            System.out.println("SQLError - could not save reiziger\n" +reiziger.toString());
+            return false;
         } catch(Exception ex) {
             System.out.println("Error - could not save reiziger\n" +reiziger.toString());
             ex.printStackTrace();
@@ -63,8 +78,28 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             adao.update(reiziger.getAdres());
 
-            return prepStatement.execute();
+            for(OVChipkaart ov : odao.findByReiziger(reiziger)){
+                if(!reiziger.getOvchipkaarten().contains(ov)){
+                    odao.delete(ov);
+                }
+            }
 
+            for(OVChipkaart ov : reiziger.getOvchipkaarten()){
+                if(odao.findByReiziger(reiziger).contains(ov)){
+                    odao.update(ov);
+                } else {
+                    odao.save(ov);
+                }
+            }
+
+            boolean complete = prepStatement.execute();
+            prepStatement.close();
+
+            return complete;
+
+        } catch (SQLException ex){
+            System.out.println("SQLError - could not update reiziger\n" +reiziger.toString());
+            return false;
         } catch(Exception ex) {
             System.out.println("Error - could not update reiziger\n" +reiziger.toString());
             return false;
@@ -81,9 +116,18 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             prepStatement.setInt(1, reiziger.getId());
             adao.delete(reiziger.getAdres());
+            for(OVChipkaart ov : reiziger.getOvchipkaarten()){
+                odao.delete(ov);
+            }
 
-            return prepStatement.execute();
+            boolean complete = prepStatement.execute();
+            prepStatement.close();
 
+            return complete;
+
+        } catch (SQLException ex){
+            System.out.println("SQLError - could not delete reiziger\n" +reiziger.toString());
+            return false;
         } catch(Exception ex) {
             System.out.println("Error - could not delete reiziger\n" +reiziger.toString());
             return false;
@@ -105,11 +149,19 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             while (rs.next() ) {
                 reiziger = new Reiziger(id, rs.getString("voorletters"), rs.getString("tussenvoegsel"),
-                                        rs.getString("achternaam"), rs.getDate("geboortedatum"), null);
+                                        rs.getString("achternaam"), rs.getDate("geboortedatum"), null, null);
                 reiziger.setAdres(adao.findbyReiziger(reiziger));
+                reiziger.setOvchipkaarten(odao.findByReiziger(reiziger));
             }
 
+            prepStatement.close();
+            rs.close();
+
             return reiziger;
+
+        } catch (SQLException ex){
+            System.out.println("SQLError - could not find reiziger by id: " + id);
+            return null;
         } catch(Exception ex) {
             System.out.println("Error - could not find reiziger by id: " + id);
             ex.printStackTrace();
@@ -133,12 +185,21 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             while (rs.next() ) {
                 reiziger = new Reiziger(rs.getInt("reiziger_id"), rs.getString("voorletters"), rs.getString("tussenvoegsel"),
-                        rs.getString("achternaam"), rs.getDate("geboortedatum"), null);
+                        rs.getString("achternaam"), rs.getDate("geboortedatum"), null, null);
                 reiziger.setAdres(adao.findbyReiziger(reiziger));
+                reiziger.setOvchipkaarten(odao.findByReiziger(reiziger));
+
                 reizigerList.add(reiziger);
             }
 
+            prepStatement.close();
+            rs.close();
+
             return reizigerList;
+
+        } catch (SQLException ex){
+            System.out.println("SQLError - could not find reiziger by date: " + Datum);
+            return null;
         } catch(Exception ex) {
             System.out.println("Error - could not find reiziger by date: " + Datum);
             return null;
@@ -160,14 +221,21 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             while (rs.next() ) {
                 reiziger = new Reiziger(rs.getInt("reiziger_id"), rs.getString("voorletters"), rs.getString("tussenvoegsel"),
-                        rs.getString("achternaam"), rs.getDate("geboortedatum"), null);
+                        rs.getString("achternaam"), rs.getDate("geboortedatum"), null, null);
                 reiziger.setAdres(adao.findbyReiziger(reiziger));
+                reiziger.setOvchipkaarten(odao.findByReiziger(reiziger));
+
                 reizigerList.add(reiziger);
             }
 
-
+            prepStatement.close();
+            rs.close();
 
             return reizigerList;
+
+        } catch (SQLException ex){
+            System.out.println("SQLError - could not find all reizigers");
+            return null;
         } catch(Exception ex) {
             System.out.println("Error - could not find all reizigers");
             ex.printStackTrace();

@@ -1,6 +1,8 @@
 package DP_P3;
 
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Reiziger {
     private int id;
@@ -9,14 +11,16 @@ public class Reiziger {
     private String achternaam;
     private Date geboortedatum;
     private Adres adres;
+    private List<OVChipkaart> ovchipkaarten = new ArrayList<OVChipkaart>();
 
-    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum, Adres adres) {
+    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum, Adres adres, List<OVChipkaart> ovchipkaarten) {
         this.id = id;
         this.voorletters = voorletters;
         this.tussenvoegsel = tussenvoegsel;
         this.achternaam = achternaam;
         this.geboortedatum = geboortedatum;
         this.adres = adres;
+        this.ovchipkaarten = ovchipkaarten;
     }
 
     public int getId() {
@@ -79,6 +83,18 @@ public class Reiziger {
         if(!(adres == null)){
             outString += adres.toString();
         }
+        if(ovchipkaarten.size() > 0){
+            outString += "\nChipkaarten:";
+            StringBuilder sb = new StringBuilder();
+            for(OVChipkaart ov : ovchipkaarten){
+                sb.append("\n").append(ov.toString());
+            }
+            outString += sb;
+        } else{
+            outString += "\nBezit geen chipkaarten";
+        }
+
+
         return outString;
     }
 
@@ -88,5 +104,33 @@ public class Reiziger {
 
     public void setAdres(Adres adres) {
         this.adres = adres;
+    }
+
+    public List<OVChipkaart> getOvchipkaarten() {
+        return ovchipkaarten;
+    }
+
+    public void addChipkaart(OVChipkaart ov) {
+        if(ovchipkaarten.contains(ov)){
+            System.out.println("Can not add since it reiziger already has this ov.");
+        } else {
+            ovchipkaarten.add(ov);
+        }
+    }
+
+    public void removeChipkaart(OVChipkaart ov) {
+        if(ovchipkaarten.contains(ov)){
+            System.out.println("Can not delete since it reiziger doesn't have this ov.");
+        } else {
+            ovchipkaarten.remove(ov);
+        }
+    }
+
+    public void clearOvchipkaarten(){
+        this.ovchipkaarten = new ArrayList<>();
+    }
+
+    public void setOvchipkaarten(List<OVChipkaart> ovchipkaarten) {
+        this.ovchipkaarten = ovchipkaarten;
     }
 }
