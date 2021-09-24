@@ -11,15 +11,14 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
     ReizigerDAOPsql(Connection connection){
         conn = connection;
-        adao = new AdresDAOPsql(connection, true);
+        adao = new AdresDAOPsql(connection);
         odao = new OVChipkaartDAOpsql(connection);
     }
 
     ReizigerDAOPsql(Connection connection, boolean skipConnection){
         conn = connection;
-        if(!skipConnection){
-            adao = new AdresDAOPsql(connection);
-        }
+        odao = new OVChipkaartDAOpsql(connection, true);
+        adao = new AdresDAOPsql(connection, true);
 
     }
     @Override
@@ -108,6 +107,11 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
     @Override
     public boolean delete(Reiziger reiziger) throws SQLException {
+        adao.delete(reiziger.getAdres());
+        for(OVChipkaart ov : reiziger.getOvchipkaarten()){
+            odao.delete(ov);
+        }
+
         try{
             PreparedStatement prepStatement = conn.prepareStatement("""
                                                                         DELETE FROM public.reiziger
@@ -115,10 +119,7 @@ public class ReizigerDAOPsql implements ReizigerDAO {
                                                                         """);
 
             prepStatement.setInt(1, reiziger.getId());
-            adao.delete(reiziger.getAdres());
-            for(OVChipkaart ov : reiziger.getOvchipkaarten()){
-                odao.delete(ov);
-            }
+
 
             boolean complete = prepStatement.execute();
             prepStatement.close();

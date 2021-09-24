@@ -16,6 +16,13 @@ public class OVChipkaartDAOpsql implements OVChipkaartDAO {
         this.rdao = new ReizigerDAOPsql(connection, true);
     }
 
+    OVChipkaartDAOpsql(Connection connection, boolean skipConnection){
+        this.conn = connection;
+        if(!skipConnection){
+            this.rdao = new ReizigerDAOPsql(connection, true);
+        }
+    }
+
     @Override
     public boolean save(OVChipkaart ovchipkaart) throws SQLException {
         try{
@@ -172,6 +179,7 @@ public class OVChipkaartDAOpsql implements OVChipkaartDAO {
 
     @Override
     public List<OVChipkaart> findAll() {
+
         try{
             PreparedStatement prepStatement = conn.prepareStatement("""
                                                                         SELECT kaart_nummer, geldig_tot, klasse, saldo, reiziger_id
@@ -183,7 +191,7 @@ public class OVChipkaartDAOpsql implements OVChipkaartDAO {
 
             while (rs.next() ) {
                 ovchipkaart.add(new OVChipkaart(rs.getInt("kaart_nummer"), rs.getDate("geldig_tot"), rs.getInt("klasse"),
-                        rs.getInt("saldo"), null));
+                        rs.getInt("saldo"), rdao.findById(rs.getInt("reiziger_id"))));
             }
 
             prepStatement.close();
