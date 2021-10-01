@@ -2,17 +2,39 @@ package DP_P3;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProductDAOpsql implements ProductDAO{
     Connection conn;
+    OVChipkaartDAO rdao;
+    OV_Chipkaart_ProductDAO ckpdao;
 
     public ProductDAOpsql(Connection connection) {
         conn = connection;
+        rdao = new OVChipkaartDAOpsql(conn, true);
+        ckpdao = new OV_Chipkaart_ProductDAOpsql(conn);
+    }
+
+    public ProductDAOpsql(Connection connection, boolean skipConnection) {
+        conn = connection;
+        if(!skipConnection){
+            rdao = new OVChipkaartDAOpsql(conn, true);
+        }
     }
 
     @Override
     public boolean save(Product product) throws SQLException {
+        for(OVChipkaart ov : product.getOvchipkaarten()){
+            rdao.save(ov);
+        }
+
+        for(OVChipkaart ov : product.getOvchipkaarten()){
+            ckpdao.save(new OV_Chipkaart_Product(product, ov));
+        }
+
         try{
             PreparedStatement prepStatement = conn.prepareStatement("""
                                                                         INSERT INTO public.product
@@ -47,7 +69,7 @@ public class ProductDAOpsql implements ProductDAO{
             PreparedStatement prepStatement = conn.prepareStatement("""
                                                                         UPDATE public.product
                                                                         SET naam=?, beschrijving=?, prijs=?
-                                                                        WHERE product_nummer=0;
+                                                                        WHERE product_nummer=?;
                                                                         """);
 
 
@@ -58,6 +80,10 @@ public class ProductDAOpsql implements ProductDAO{
 
             boolean complete = prepStatement.execute();
             prepStatement.close();
+
+            for(OVChipkaart ov : product.getOvchipkaarten()){
+                ckpdao.updateChipkaart(ov, product);
+            }
 
             return complete;
 
@@ -75,6 +101,11 @@ public class ProductDAOpsql implements ProductDAO{
 
     @Override
     public boolean delete(Product product) throws SQLException {
+        for(OVChipkaart ov : product.getOvchipkaarten()){
+            rdao.delete(ov);
+            ckpdao.deleteChipkaart(ov);
+        }
+
         try{
             PreparedStatement prepStatement = conn.prepareStatement("""
                                                                         DELETE FROM public.product
@@ -85,6 +116,7 @@ public class ProductDAOpsql implements ProductDAO{
 
             boolean complete = prepStatement.execute();
             prepStatement.close();
+
 
             return complete;
 
@@ -97,6 +129,83 @@ public class ProductDAOpsql implements ProductDAO{
             System.out.println("Error - could not delete product\n" +product.toString());
             ex.printStackTrace();
             return false;
+        }
+    }
+
+    @Override
+    public List<Product> findByOVChipkaart(OVChipkaart ovChipkaart) throws SQLException {
+        try{
+            PreparedStatement prepStatement = conn.prepareStatement("""
+                                                                        select p.*
+                                                                        from product p
+                                                                        left join ov_chipkaart_product ocp on p.product_nummer = ocp.product_nummer
+                                                                        left join ov_chipkaart oc on oc.kaart_nummer = ocp.kaart_nummer
+                                                                        where oc.kaart_nummer = ?
+                                                                        """);
+
+
+            prepStatement.setInt(1, ovChipkaart.getKaart_nummer());
+            ResultSet rs = prepStatement.executeQuery();
+
+            Product product = null;
+            List<Product>  productList = new ArrayList<Product>();
+
+            while (rs.next() ) {
+                product = new Product(rs.getInt("product_nummer"), rs.getString("naam"), rs.getString("beschrijving"),
+                        rs.getDouble("prijs"));
+
+                product.addOvchipkaart(ovChipkaart);
+                productList.add(product);
+            }
+
+            prepStatement.close();
+            rs.close();
+
+            return productList;
+        } catch(SQLException ex) {
+            System.out.println("SQL Error - could not findbyov with ovchipkaart\n" +ovChipkaart.toString());
+            ex.printStackTrace();
+            return null;
+
+        } catch(Exception ex) {
+            System.out.println("Error - could not findbyov with ovchipkaart\n" +ovChipkaart.toString());
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public List<Product> findAll() throws SQLException {
+        try{
+            PreparedStatement prepStatement = conn.prepareStatement("""
+                                                                        SELECT *
+                                                                        FROM public.product;
+                                                                        """);
+
+            ResultSet rs = prepStatement.executeQuery();
+
+            Product product = null;
+            List<Product>  productList = new ArrayList<Product>();
+
+            while (rs.next() ) {
+                product = new Product(rs.getInt("product_nummer"), rs.getString("naam"), rs.getString("beschrijving"),
+                        rs.getDouble("prijs"));
+
+                productList.add(product);
+            }
+
+            prepStatement.close();
+            rs.close();
+
+            return productList;
+
+        } catch (SQLException ex){
+            System.out.println("SQLError - could not find all producten");
+            return null;
+        } catch(Exception ex) {
+            System.out.println("Error - could not find all producten");
+            ex.printStackTrace();
+            return null;
         }
     }
 }

@@ -10,10 +10,14 @@ import java.util.List;
 public class OVChipkaartDAOpsql implements OVChipkaartDAO {
     Connection conn;
     ReizigerDAO rdao;
+    ProductDAO pdao;
+    OV_Chipkaart_ProductDAO ckpdao;
 
     OVChipkaartDAOpsql(Connection connection){
         this.conn = connection;
         this.rdao = new ReizigerDAOPsql(connection, true);
+        this.pdao = new ProductDAOpsql(connection, true);
+        this.ckpdao = new OV_Chipkaart_ProductDAOpsql(connection);
     }
 
     OVChipkaartDAOpsql(Connection connection, boolean skipConnection){
@@ -25,6 +29,9 @@ public class OVChipkaartDAOpsql implements OVChipkaartDAO {
 
     @Override
     public boolean save(OVChipkaart ovchipkaart) throws SQLException {
+        for(Product p : ovchipkaart.getProducten()){
+            ckpdao.save(new OV_Chipkaart_Product(p, ovchipkaart));
+        }
         try{
             PreparedStatement prepStatement = conn.prepareStatement("""
                                                                         INSERT INTO public.ov_chipkaart
@@ -74,6 +81,10 @@ public class OVChipkaartDAOpsql implements OVChipkaartDAO {
             boolean complete = prepStatement.execute();
             prepStatement.close();
 
+            for(Product p : ovchipkaart.getProducten()){
+                ckpdao.updateProduct(p, ovchipkaart);
+            }
+
             return complete;
 
         } catch(SQLException ex) {
@@ -90,6 +101,10 @@ public class OVChipkaartDAOpsql implements OVChipkaartDAO {
 
     @Override
     public boolean delete(OVChipkaart ovchipkaart) throws SQLException {
+        for(Product p : ovchipkaart.getProducten()){
+            ckpdao.delete(new OV_Chipkaart_Product(p, ovchipkaart));
+        }
+
         try{
             PreparedStatement prepStatement = conn.prepareStatement("""
                                                                         DELETE FROM public.ov_chipkaart
